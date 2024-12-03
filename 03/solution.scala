@@ -14,16 +14,14 @@ type Output = Int
 def parseInput(input: String): Input = input
 
 def part1(input: Input): Output =
-  raw"mul\((\d{1,3}),(\d{1,3})\)".r
+  """mul\((\d{1,3}),(\d{1,3})\)""".r
     .findAllMatchIn(input)
     .map(m => m.group(1).toInt * m.group(2).toInt)
     .sum
 
 def part2(input: Input): Output =
-  input
-    .split(raw"do\(\)")
-    .map(
-      _.split(raw"don't\(\)").head
-    )
-    .map(part1)
-    .sum
+  part1(
+    input
+      .replaceAll("\n", "")
+      .replaceAll("""don't\(\).*?(do\(\)|$)""", "")
+  )

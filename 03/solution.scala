@@ -20,7 +20,6 @@ def part1(input: Input): Output =
     .sum
 
 def part2(input: Input): Output =
-  part1(
-    input
-      .replaceAll("""(?s)don't\(\).*?(do\(\)|$)""", "")
-  )
+  def removeDonts(str: String) =
+    str.replaceAll("""(?s)don't\(\).*?(do\(\)|$)""", "")
+  part1(removeDonts(input))

@@ -13,8 +13,8 @@ type Output = Int
 
 def parseInput(input: String): Input =
   def lineToPair(line: String): (Int, Int) =
-    val pair = line.split("\\s+")
-    (pair(0).toInt, pair(1).toInt)
+    val Array(a, b) = line.split("""\s+""").map(_.toInt)
+    (a, b)
   input.linesIterator
     .map(lineToPair)
     .toList

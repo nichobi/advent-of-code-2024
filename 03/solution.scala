@@ -22,6 +22,5 @@ def part1(input: Input): Output =
 def part2(input: Input): Output =
   part1(
     input
-      .replaceAll("\n", "")
-      .replaceAll("""don't\(\).*?(do\(\)|$)""", "")
+      .replaceAll("""(?s)don't\(\).*?(do\(\)|$)""", "")
   )

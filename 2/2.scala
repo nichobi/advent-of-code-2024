@@ -1,19 +1,18 @@
 @main def main(part: Int, others: String*): Unit =
   val file = others match
+    case Nil      => "input"
     case Seq(str) => str
-    case _ => "input"
   val input = parseInput(io.Source.fromFile(file).mkString)
   val result = part match
     case 1 => part1(input)
     case 2 => part2(input)
   println(result)
 
-type Input  = List[List[Int]]
+type Input = List[List[Int]]
 type Output = Int
 
 def parseInput(input: String): Input =
-  input
-    .linesIterator
+  input.linesIterator
     .map(_.split("\\s+").toList.map(_.toInt))
     .toList
 

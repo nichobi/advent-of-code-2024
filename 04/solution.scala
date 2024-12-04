@@ -21,14 +21,14 @@ def countXmas(input: Seq[Char]) =
     .sliding(4)
     .count(Seq(xmas, xmas.reverse).contains)
 
-def diagonals(matrix: Matrix[Char]): Matrix[Char] =
-  def nthDiagonal(matrix: Matrix[Char], n: Int): Seq[Char] =
+def diagonals(matrix: Matrix[Char]): Seq[Seq[Char]] =
+  def diagonal(matrix: Matrix[Char], n: Int): Seq[Char] =
     val size = matrix.size
-    val range = if n <= size then 0 until n else (n - size) until size
-    (for i <- range
-    yield matrix(i)(n - i - 1))
+    val range = if n < size then 0 to n else n + 1 - size until size
+    for i <- range
+    yield matrix(i)(n - i)
 
-  (1 until 2 * matrix.size).map(nthDiagonal(matrix, _))
+  (0 until 2 * matrix.size - 1).map(diagonal(matrix, _))
 
 def part1(input: Input): Output =
   Seq(
@@ -40,8 +40,8 @@ def part1(input: Input): Output =
 
 def submatrices(matrix: Matrix[Char]): Seq[Matrix[Char]] =
   for
-    i <- 0 until matrix.size - 2
-    j <- 0 until matrix.size - 2
+    i <- 0 to matrix.size - 3
+    j <- 0 to matrix.size - 3
   yield matrix.slice(i, i + 3).map(_.slice(j, j + 3))
 
 def isMasX(m: Matrix[Char]): Boolean =

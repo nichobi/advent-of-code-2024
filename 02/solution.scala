@@ -28,7 +28,7 @@ def isSafe(report: List[Int]): Boolean =
   diffs.forall(safeIncrease) || diffs.forall(safeDecrease)
 
 def part1(input: Input): Output =
-  input.filter(isSafe).size
+  input.count(isSafe)
 
 def isSafeWhenDampened(report: List[Int]): Boolean =
   def dropIndex[T](list: List[T], index: Int): List[T] =
@@ -36,4 +36,4 @@ def isSafeWhenDampened(report: List[Int]): Boolean =
   (0 until report.size).iterator.map(dropIndex(report, _)).exists(isSafe)
 
 def part2(input: Input): Output =
-  input.filter(isSafeWhenDampened).size
+  input.count(isSafeWhenDampened)

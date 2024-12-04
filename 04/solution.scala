@@ -19,7 +19,7 @@ val xmas = "XMAS".toSeq
 def countXmas(input: Seq[Char]) =
   input
     .sliding(4)
-    .count(x => x.sameElements(xmas) || x.sameElements(xmas.reverse))
+    .count(Seq(xmas, xmas.reverse).contains)
 
 def diagonals(matrix: Matrix[Char]): Matrix[Char] =
   def nthDiagonal(matrix: Matrix[Char], n: Int): Seq[Char] =

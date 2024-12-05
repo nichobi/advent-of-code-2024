@@ -10,7 +10,9 @@ import scala.annotation.tailrec
     case 2 => part2(input)
   println(result)
 
-type Input = (Seq[(Int, Int)], Seq[List[Int]])
+type Rule = (Int, Int)
+type Update = List[Int]
+type Input = (Seq[Rule], Seq[Update])
 type Output = Int
 
 def parseInput(input: String): Input =
@@ -25,15 +27,15 @@ def parseInput(input: String): Input =
       yield update.split(',').map(_.toInt).toList
   (rules, updates)
 
-def predecessors(rules: Seq[(Int, Int)], page: Int): Seq[Int] =
+def predecessors(page: Int)(using rules: Seq[Rule]): Seq[Int] =
   rules.filter(_._2 == page).map(_._1)
 
 @tailrec
-def updateIsSorted(rules: Seq[(Int, Int)])(update: List[Int]): Boolean =
+def updateIsSorted(update: Update)(using rules: Seq[Rule]): Boolean =
   update match
     case (x :: xs) =>
-      predecessors(rules, x).forall(!xs.contains(_))
-      && updateIsSorted(rules)(xs)
+      predecessors(x).forall(!xs.contains(_))
+      && updateIsSorted(xs)
     case Nil => true
 
 def midpoint[A](list: Seq[A]): A =
@@ -41,13 +43,22 @@ def midpoint[A](list: Seq[A]): A =
 
 def part1(input: Input): Output =
   val (rules, updates) = input
-  updates.filter(updateIsSorted(rules)).map(midpoint).sum
+  given Seq[Rule] = rules
+
+  updates
+    .filter(updateIsSorted)
+    .map(midpoint)
+    .sum
+
+def compare(a: Int, b: Int)(using rules: Seq[Rule]) =
+  predecessors(b).contains(a)
 
 def part2(input: Input): Output =
   val (rules, updates) = input
-  def compare(a: Int, b: Int) = predecessors(rules, b).contains(a)
+  given Seq[Rule] = rules
+
   updates
-    .filter(!updateIsSorted(rules)(_))
+    .filter(!updateIsSorted(_))
     .map(_.sortWith(compare))
     .map(midpoint)
     .sum

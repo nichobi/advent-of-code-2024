@@ -1,4 +1,3 @@
-import Direction.{Up, Down, Left, Right}
 import scala.annotation.tailrec
 
 @main def main(part: Int, others: String*): Unit =
@@ -23,34 +22,36 @@ enum Direction:
     case Down  => Left
     case Right => Down
     case Left  => Up
+import Direction.{Up, Down, Left, Right}
 
-case class GuardState(coordinates: (Int, Int), direction: Direction)
+case class GuardState(position: (Int, Int), direction: Direction)
+
 case class State(
     guard: GuardState,
     map: Vector[Vector[Boolean]],
     visited: Set[(Int, Int)]
 ):
-  def finished = !withinBounds(guard.coordinates, map)
-
+  def finished = !withinBounds(guard.position)
+  val bounds = (0 until map.size, 0 until map.head.size)
+  def withinBounds(position: (Int, Int)) =
+    bounds._1.contains(position._1) && bounds._2.contains(position._2)
 type Input = State
 type Output = Int
 
 def parseInput(input: String): Input =
   val guardChar = input.filter("^v<>".contains).head
-  val coordinates =
-    (
-      for
-        (l, i) <- input.split('\n').zipWithIndex
-        (c, j) <- l.zipWithIndex if (c == guardChar)
-      yield (i, j)
-    ).head
+  val Array(position) =
+    for
+      (l, i) <- input.split('\n').zipWithIndex
+      (c, j) <- l.zipWithIndex if (c == guardChar)
+    yield (i, j)
   val direction = guardChar match
     case '^' => Up
     case 'v' => Down
     case '<' => Left
     case '>' => Right
   val map = input.split('\n').map(_.map(_ == '#').toVector).toVector
-  State(GuardState(coordinates, direction), map, Set(coordinates))
+  State(GuardState(position, direction), map, Set(position))
 
 extension (a: (Int, Int))
   def add(b: (Int, Int)) =
@@ -58,32 +59,27 @@ extension (a: (Int, Int))
   def shift(direction: Direction): (Int, Int) =
     add(direction.delta)
 
-def withinBounds[A](next: (Int, Int), map: Vector[Vector[A]]): Boolean =
-  val size = (map.size, map.head.size)
-  (0 until size._1).contains(next._1) &&
-  (0 until size._2).contains(next._2)
-
 def step(state: State): State = state match
-  case State(GuardState(coordinates, direction), map, visited) =>
-    val next = coordinates.shift(direction)
-    if withinBounds(next, map) && map(next._1)(next._2)
+  case State(GuardState(position, direction), map, visited) =>
+    val next = position.shift(direction)
+    if state.withinBounds(next) && map(next._1)(next._2)
     then
       state.copy(
-        guard = GuardState(coordinates, direction.turn)
+        guard = GuardState(position, direction.turn)
       )
     else
       state.copy(
         guard = GuardState(next, direction),
-        visited = visited + coordinates
+        visited = visited + position
       )
 
 @tailrec
-def play(state: State): State =
+def walk(state: State): State =
   if state.finished
   then state
-  else play(step(state))
+  else walk(step(state))
 
-def part1(input: Input): Output = play(input).visited.size
+def part1(input: Input): Output = walk(input).visited.size
 
 @tailrec
 def isLooped(state: State, seenStates: Set[GuardState] = Set()): Boolean =
@@ -94,7 +90,7 @@ def isLooped(state: State, seenStates: Set[GuardState] = Set()): Boolean =
   else isLooped(step(state), seenStates + state.guard)
 
 def part2(input: Input): Output =
-  val visited = play(input).visited
+  val visited = walk(input).visited
   val map = input.map
   visited
     .map((i, j) => map.updated(i, map(i).updated(j, true)))

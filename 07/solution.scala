@@ -22,9 +22,8 @@ def parseInput(input: String): Input =
 
 def calculate(numbers: List[Long])(using operators: Seq[Operator]): Seq[Long] =
   numbers match
-    case x :: y :: xs =>
-      operators.flatMap(op => calculate(op(x, y) :: xs))
-    case x :: Nil => Seq(x)
+    case x :: y :: xs => operators.flatMap(op => calculate(op(x, y) :: xs))
+    case x :: Nil     => Seq(x)
 
 def solve(input: Input)(using operators: Seq[Operator]) =
   input

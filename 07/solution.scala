@@ -20,33 +20,32 @@ def parseInput(input: String): Input =
     )
     .toSeq
 
-def possibleResults(numbers: List[Long]): Set[Long] = numbers match
-  case x :: Nil => Set(x)
-  case x :: xs =>
-    possibleResults(xs).map(x + _) ++ possibleResults(xs).map(x * _)
+def add(x: Long, y: Long) = x + y
+def mul(x: Long, y: Long) = x * y
+
+def possibleResults(numbers: List[Long], operators: Seq[(Long, Long) => Long]): Set[Long] = numbers match
+    case x :: Nil => Set(x)
+    case x :: xs =>
+      operators.flatMap(op => possibleResults(xs, operators).map(y => op(x, y))).toSet
 
 def part1(input: Input): Output =
+  val operators = Seq(add, mul)
   input
     .filter((testValue, numbers) =>
-      possibleResults(numbers.toList.reverse).contains(testValue)
+      possibleResults(numbers.toList.reverse, operators).contains(testValue)
     )
     .map(_._1)
     .sum
 
 def concat(a: Long, b: Long): Long =
   s"$b$a".toLong
-def possibleResults2(numbers: List[Long]): Set[Long] =
-  val operators =
-    Seq((x: Long, y: Long) => x + y, (x: Long, y: Long) => x * y, concat)
-  numbers match
-    case x :: Nil => Set(x)
-    case x :: xs =>
-      operators.flatMap(op => possibleResults2(xs).map(y => op(x, y))).toSet
 
 def part2(input: Input): Output =
+  val operators =
+    Seq(add, mul, concat)
   input
     .filter((testValue, numbers) =>
-      possibleResults2(numbers.toList.reverse).contains(testValue)
+      possibleResults(numbers.toList.reverse, operators).contains(testValue)
     )
     .map(_._1)
     .sum

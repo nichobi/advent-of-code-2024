@@ -15,10 +15,9 @@ type Operator = (Long, Long) => Long
 def parseInput(input: String): Input =
   input
     .split('\n')
-    .map(line =>
-      val Array(testValue, rest) = line.split(": ")
-      (testValue.toLong, rest.split(' ').map(_.toLong).toList)
-    )
+    .map:
+      case s"$value: $numbers" =>
+        (value.toLong, numbers.split(' ').map(_.toLong).toList)
     .toSeq
 
 def calculate(numbers: List[Long])(using operators: Seq[Operator]): Seq[Long] =
@@ -26,18 +25,15 @@ def calculate(numbers: List[Long])(using operators: Seq[Operator]): Seq[Long] =
     case x :: y :: xs =>
       operators.flatMap(op => calculate(op(x, y) :: xs))
     case x :: Nil => Seq(x)
-    case Nil      => ???
 
 def solve(input: Input)(using operators: Seq[Operator]) =
   input
-    .filter((testValue, numbers) => calculate(numbers).contains(testValue))
-    .map(_._1)
+    .collect:
+      case (value, numbers) if calculate(numbers).contains(value) => value
     .sum
 
 def part1(input: Input): Output =
-  given Seq[Operator] = Seq(_ + _, _ * _)
-  solve(input)
+  solve(input)(using Seq(_ + _, _ * _))
 
 def part2(input: Input): Output =
-  given Seq[Operator] = Seq(_ + _, _ * _, (a, b) => s"$a$b".toLong)
-  solve(input)
+  solve(input)(using Seq(_ + _, _ * _, (a, b) => s"$a$b".toLong))

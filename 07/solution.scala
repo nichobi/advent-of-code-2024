@@ -8,44 +8,36 @@
     case 2 => part2(input)
   println(result)
 
-type Input = Seq[(Long, Seq[Long])]
+type Input = Seq[(Long, List[Long])]
 type Output = Long
+type Operator = (Long, Long) => Long
 
 def parseInput(input: String): Input =
   input
     .split('\n')
     .map(line =>
       val Array(testValue, rest) = line.split(": ")
-      (testValue.toLong, rest.split(' ').map(_.toLong).toSeq)
+      (testValue.toLong, rest.split(' ').map(_.toLong).toList)
     )
     .toSeq
 
-def add(x: Long, y: Long) = x + y
-def mul(x: Long, y: Long) = x * y
+def calculate(numbers: List[Long])(using operators: Seq[Operator]): Seq[Long] =
+  numbers match
+    case x :: y :: xs =>
+      operators.flatMap(op => calculate(op(x, y) :: xs))
+    case x :: Nil => Seq(x)
+    case Nil      => ???
 
-def possibleResults(numbers: List[Long], operators: Seq[(Long, Long) => Long]): Set[Long] = numbers match
-    case x :: Nil => Set(x)
-    case x :: xs =>
-      operators.flatMap(op => possibleResults(xs, operators).map(y => op(x, y))).toSet
+def solve(input: Input)(using operators: Seq[Operator]) =
+  input
+    .filter((testValue, numbers) => calculate(numbers).contains(testValue))
+    .map(_._1)
+    .sum
 
 def part1(input: Input): Output =
-  val operators = Seq(add, mul)
-  input
-    .filter((testValue, numbers) =>
-      possibleResults(numbers.toList.reverse, operators).contains(testValue)
-    )
-    .map(_._1)
-    .sum
-
-def concat(a: Long, b: Long): Long =
-  s"$b$a".toLong
+  given Seq[Operator] = Seq(_ + _, _ * _)
+  solve(input)
 
 def part2(input: Input): Output =
-  val operators =
-    Seq(add, mul, concat)
-  input
-    .filter((testValue, numbers) =>
-      possibleResults(numbers.toList.reverse, operators).contains(testValue)
-    )
-    .map(_._1)
-    .sum
+  given Seq[Operator] = Seq(_ + _, _ * _, (a, b) => s"$a$b".toLong)
+  solve(input)

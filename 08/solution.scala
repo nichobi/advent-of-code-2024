@@ -27,33 +27,31 @@ def parseInput(input: String): Input =
   )
 
 extension (a: (Int, Int))
-  def add(b: (Int, Int)) =
+  def +(b: (Int, Int)): (Int, Int) =
     (a._1 + b._1, a._2 + b._2)
-  def sub(b: (Int, Int)): (Int, Int) =
-    add(-b._1, -b._2)
+  def -(b: (Int, Int)): (Int, Int) =
+    (a._1 - b._1, a._2 - b._2)
 
 def antinodes(a: (Int, Int), b: (Int, Int)) =
-  val diff = a.sub(b)
-  Seq(a.add(diff), b.sub(diff))
+  val diff = a - b
+  Seq(a + diff, b - diff)
 
 def withinBounds(position: (Int, Int))(using bounds: Bounds) =
   bounds._1.contains(position._1) && bounds._2.contains(position._2)
 
 def findAntinodes(
     antennas: Seq[(Int, Int)]
-)(using Bounds)(using antinodeGenerator: AntinodeGenerator): Set[(Int, Int)] =
+)(using Bounds)(using antinodeGenerator: AntinodeGenerator): Seq[(Int, Int)] =
   antennas
     .combinations(2)
-    .map:
+    .flatMap:
       case Seq(a, b) => antinodeGenerator(a, b)
-    .flatten
-    .toSet
     .filter(withinBounds)
+    .toSeq
 
 def solve(antennaSets: Seq[Seq[(Int, Int)]])(using AntinodeGenerator, Bounds) =
   antennaSets
-    .map(findAntinodes)
-    .flatten
+    .flatMap(findAntinodes)
     .toSet
     .size
 
@@ -62,8 +60,8 @@ def part1(input: Input): Output =
   solve(antennaSets)(using antinodes, bounds)
 
 def resonantAntinodes(a: (Int, Int), b: (Int, Int))(using Bounds) =
-  val diff = a.sub(b)
-  Seq(iterate(a)(_.add(diff)), iterate(b)(_.sub(diff)))
+  val diff = a - b
+  Seq(iterate(a)(_ + diff), iterate(b)(_ - diff))
     .flatMap(_.takeWhile(withinBounds))
 
 def part2(input: Input): Output =

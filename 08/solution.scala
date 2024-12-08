@@ -17,14 +17,12 @@ type AntinodeGenerator = ((Int, Int), (Int, Int)) => Seq[(Int, Int)]
 
 def parseInput(input: String): Input =
   val lines = input.split('\n')
-  val locations = for
+  val bounds = (0 until lines.size, 0 until lines.head.size)
+  val antennaSets = (for
     (line, i) <- lines.zipWithIndex
     (char, j) <- line.zipWithIndex if char != '.'
-  yield (char, (i, j))
-  (
-    locations.toSeq.groupMap(_._1)(_._2).values.toSeq,
-    (0 until lines.size, 0 until lines.head.size)
-  )
+  yield (char, (i, j))).toSeq.groupMap(_._1)(_._2).values.toSeq
+  (antennaSets, bounds)
 
 extension (a: (Int, Int))
   def +(b: (Int, Int)): (Int, Int) =
@@ -32,21 +30,18 @@ extension (a: (Int, Int))
   def -(b: (Int, Int)): (Int, Int) =
     (a._1 - b._1, a._2 - b._2)
 
-def antinodes(a: (Int, Int), b: (Int, Int)) =
+def antinodes(a: (Int, Int), b: (Int, Int))(using Bounds) =
   val diff = a - b
-  Seq(a + diff, b - diff)
+  Seq(a + diff, b - diff).filter(withinBounds)
 
 def withinBounds(position: (Int, Int))(using bounds: Bounds) =
   bounds._1.contains(position._1) && bounds._2.contains(position._2)
 
-def findAntinodes(
-    antennas: Seq[(Int, Int)]
-)(using Bounds)(using antinodeGenerator: AntinodeGenerator): Seq[(Int, Int)] =
+def findAntinodes(antennas: Seq[(Int, Int)])(using Bounds, AntinodeGenerator) =
   antennas
     .combinations(2)
     .flatMap:
-      case Seq(a, b) => antinodeGenerator(a, b)
-    .filter(withinBounds)
+      case Seq(a, b) => summon[AntinodeGenerator](a, b)
     .toSeq
 
 def solve(antennaSets: Seq[Seq[(Int, Int)]])(using AntinodeGenerator, Bounds) =
@@ -57,7 +52,8 @@ def solve(antennaSets: Seq[Seq[(Int, Int)]])(using AntinodeGenerator, Bounds) =
 
 def part1(input: Input): Output =
   val (antennaSets, bounds) = input
-  solve(antennaSets)(using antinodes, bounds)
+  given Bounds = bounds
+  solve(antennaSets)(using antinodes)
 
 def resonantAntinodes(a: (Int, Int), b: (Int, Int))(using Bounds) =
   val diff = a - b

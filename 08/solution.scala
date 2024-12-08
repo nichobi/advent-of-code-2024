@@ -1,3 +1,5 @@
+import Iterator.iterate
+
 @main def main(part: Int, others: String*): Unit =
   val file = others match
     case Nil      => "input"
@@ -30,7 +32,7 @@ extension (a: (Int, Int))
   def sub(b: (Int, Int)): (Int, Int) =
     add(-b._1, -b._2)
 
-def antinodesOfPair(a: (Int, Int), b: (Int, Int)) =
+def antinodes(a: (Int, Int), b: (Int, Int)) =
   val diff = a.sub(b)
   Seq(a.add(diff), b.sub(diff))
 
@@ -48,25 +50,23 @@ def findAntinodes(
     .toSet
     .filter(withinBounds)
 
-def solve(input: Input)(using AntinodeGenerator) =
-  val (antennas, bounds) = input
-  given Bounds = bounds
-  antennas
+def solve(antennaSets: Seq[Seq[(Int, Int)]])(using AntinodeGenerator, Bounds) =
+  antennaSets
     .map(findAntinodes)
     .flatten
     .toSet
     .size
 
 def part1(input: Input): Output =
-  solve(input)(using antinodesOfPair)
+  val (antennaSets, bounds) = input
+  solve(antennaSets)(using antinodes, bounds)
 
-def antinodesOfPair2(a: (Int, Int), b: (Int, Int))(using Bounds) =
+def resonantAntinodes(a: (Int, Int), b: (Int, Int))(using Bounds) =
   val diff = a.sub(b)
-  (
-    Iterator.iterate(a)(_.add(diff)).takeWhile(withinBounds) ++
-      Iterator.iterate(b)(_.sub(diff)).takeWhile(withinBounds)
-  ).toSeq
+  Seq(iterate(a)(_.add(diff)), iterate(b)(_.sub(diff)))
+    .flatMap(_.takeWhile(withinBounds))
 
 def part2(input: Input): Output =
-  given Bounds = input._2
-  solve(input)(using antinodesOfPair2)
+  val (antennaSets, bounds) = input
+  given Bounds = bounds
+  solve(antennaSets)(using resonantAntinodes)

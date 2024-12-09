@@ -69,35 +69,37 @@ case class Filesystem(blocks: List[BlockSection]):
   final def compress(maxIndex: Int = blocks.size): Filesystem =
     findSwap(maxIndex) match
       case Some((file, free)) =>
-        val newMaxIndex =
+        val newMaxIndex = // TODO: Improve this hotfix
           if blocks(file).size < blocks(free).size then file + 1
-          else file // TODO: Improve this hotfix
+          else file
         swap(file, free).compress(maxIndex = newMaxIndex)
       case None => this
 
   def checksum: Long =
-    println(blocks)
     (for b <- blocks
     yield b match
       case f: File => Seq.fill(f.size)(f.index)
       case f: Free => Seq.fill(f.size)(0)
     ).flatten.zipWithIndex.map(_.toLong * _).sum
 
-  def breakBlockSections =
-    def breakBlockSection(blockSection: BlockSection) = blockSection match
+  def chunkFiles =
+    def chunkFile(blockSection: BlockSection) = blockSection match
       case f: File => List.fill(f.size)(File(1, f.index))
-      case f: Free => List.fill(f.size)(Free(1))
-
-    Filesystem(blocks.flatMap(breakBlockSection))
+      case f: Free => List(f)
+    Filesystem(blocks.flatMap(chunkFile))
 
 def parseInput(input: String): Input =
   Filesystem(
-    (for (a, i) <- input.filter(_.isDigit).map(_.asDigit).zipWithIndex
-    yield if i % 2 == 0 then File(a, i / 2) else Free(a)).toList
+    input
+      .filter(_.isDigit)
+      .map(_.asDigit)
+      .zipWithIndex
+      .map((a, i) => if i % 2 == 0 then File(a, i / 2) else Free(a))
+      .toList
   )
 
 def part1(input: Input): Output =
-  input.breakBlockSections.compress().checksum
+  input.chunkFiles.compress().checksum
 
 def part2(input: Input): Output =
   input.compress().checksum

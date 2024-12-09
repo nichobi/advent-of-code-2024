@@ -14,9 +14,10 @@ import annotation.tailrec
 type Input = Filesystem
 type Output = Long
 
-enum BlockSection(val size: Int):
-  case Free(private val s: Int) extends BlockSection(s)
-  case File(private val s: Int, index: Int) extends BlockSection(s)
+enum BlockSection:
+  val size: Int
+  case Free(size: Int)
+  case File(size: Int, index: Int)
 import BlockSection.{Free, File}
 
 case class Filesystem(blocks: List[BlockSection]):

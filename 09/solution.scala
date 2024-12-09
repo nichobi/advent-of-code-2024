@@ -17,12 +17,6 @@ type Output = Long
 enum BlockSection(val size: Int):
   case Free(private val s: Int) extends BlockSection(s)
   case File(private val s: Int, index: Int) extends BlockSection(s)
-  def isFree = this match
-    case _: Free => true
-    case _       => false
-  def isFile = this match
-    case _: File => true
-    case _       => false
 import BlockSection.{Free, File}
 
 case class Filesystem(blocks: List[BlockSection]):
@@ -56,7 +50,8 @@ case class Filesystem(blocks: List[BlockSection]):
           .zipWithIndex
           .reverse
           .iterator
-          .filter(_._1.isFile)
+          .collect:
+            case (f: File, i) => (f, i)
       yield blocks
         .take(index)
         .zipWithIndex

@@ -1,4 +1,5 @@
 package day09
+import annotation.tailrec
 
 @main def main(part: Int, others: String*): Unit =
   val file = others match
@@ -10,73 +11,93 @@ package day09
     case 2 => part2(input)
   println(result)
 
-type Input = String
+type Input = Filesystem
 type Output = Long
 
-def parseInput(input: String): Input = input.filter(_.isDigit)
-
-def compact(input: Seq[Option[Int]]): Seq[Option[Int]] =
-  val filesystem = input.toArray
-  val filledBlocks = filesystem.count(_.isDefined)
-  while (filesystem.take(filledBlocks).filter(_.isEmpty).nonEmpty)
-    val firstEmpty = filesystem.indexOf(None)
-    val lastFilled = filesystem.lastIndexWhere(_.isDefined)
-    filesystem(firstEmpty) = filesystem(lastFilled)
-    filesystem(lastFilled) = None
-  filesystem.toSeq
-
-def part1(input: Input): Output =
-  val filesystem = (for (a, i) <- input.map(_.asDigit).zipWithIndex
-  yield
-    if i % 2 == 0 then Seq.fill(a)(Some(i / 2)) else Seq.fill(a)(None)).flatten
-  compact(filesystem).flatten.zipWithIndex.map(_.toLong * _).sum
-
-def fill(free: Free, file: File) = (free, file) match
-  case (Free(x), File(y, _)) if x > y  => Seq(file, Free(x - y))
-  case (Free(x), File(y, _)) if x == y => Seq(file)
-
-@annotation.tailrec
-def squashFrees(
-    filesystem: List[BlockSection],
-    acc: List[BlockSection] = List()
-): List[BlockSection] = filesystem match
-  case Free(x) :: Free(y) :: xs => squashFrees(Free(x + y) :: xs, acc)
-  case x :: xs                  => squashFrees(xs, x :: acc)
-  case Nil                      => acc.reverse
-
-def compactIteration(
-    filesystem: Seq[BlockSection],
-    compactQueue: List[File]
-): Seq[BlockSection] =
-  compactQueue match
-    case Nil => filesystem
-    case next :: remaining =>
-      (filesystem.zipWithIndex.find:
-        case (Free(x), i) if x >= next.size && i < filesystem.indexOf(next) =>
-          true
-        case _ => false
-      ) match
-        case Some(free: Free, index) =>
-          val newFilesystem = filesystem
-            .updated(filesystem.indexOf(next), Free(next.size))
-            .patch(index, fill(free, next), 1)
-          compactIteration(squashFrees(newFilesystem.toList), remaining)
-        case None => compactIteration(filesystem, remaining)
-        case _    => ???
-
-def compact2(input: Seq[BlockSection]): Seq[BlockSection] =
-  compactIteration(input, input.collect { case x: File => x }.reverse.toList)
-enum BlockSection(size: Int):
-  case Free(size: Int) extends BlockSection(size)
-  case File(size: Int, index: Int) extends BlockSection(size)
+enum BlockSection(val size: Int):
+  case Free(private val s: Int) extends BlockSection(s)
+  case File(private val s: Int, index: Int) extends BlockSection(s)
+  def isFree = this match
+    case _: Free => true
+    case _       => false
+  def isFile = this match
+    case _: File => true
+    case _       => false
 import BlockSection.{Free, File}
 
+case class Filesystem(blocks: List[BlockSection]):
+  def squashFrees: Filesystem =
+    @tailrec
+    def squash(
+        filesystem: List[BlockSection],
+        acc: List[BlockSection] = List()
+    ): List[BlockSection] = filesystem match
+      case Free(x) :: Free(y) :: xs => squash(Free(x + y) :: xs, acc)
+      case x :: xs                  => squash(xs, x :: acc)
+      case Nil                      => acc.reverse
+    Filesystem(squash(blocks))
+
+  def swap(fileIndex: Int, freeIndex: Int): Filesystem =
+    def fill(free: Free, file: File) = (free, file) match
+      case (Free(x), File(y, _)) if x > y  => Seq(file, Free(x - y))
+      case (Free(x), File(y, _)) if x == y => Seq(file)
+    (blocks(fileIndex), blocks(freeIndex)) match
+      case (file: File, free: Free) =>
+        Filesystem(
+          blocks
+            .updated(fileIndex, Free(file.size))
+            .patch(freeIndex, fill(free, file), 1)
+        ).squashFrees
+
+  def findSwap(maxIndex: Int): Option[(Int, Int)] =
+    val possibleSwaps =
+      for (file, index) <- blocks
+          .take(maxIndex)
+          .zipWithIndex
+          .reverse
+          .iterator
+          .filter(_._1.isFile)
+      yield blocks
+        .take(index)
+        .zipWithIndex
+        .collect:
+          case (f: Free, j) if f.size >= file.size => (index, j)
+        .headOption
+    possibleSwaps.flatten.nextOption
+
+  @tailrec
+  final def compress(maxIndex: Int = blocks.size): Filesystem =
+    findSwap(maxIndex) match
+      case Some((file, free)) =>
+        val newMaxIndex =
+          if blocks(file).size < blocks(free).size then file + 1
+          else file // TODO: Improve this hotfix
+        swap(file, free).compress(maxIndex = newMaxIndex)
+      case None => this
+
+  def checksum: Long =
+    println(blocks)
+    (for b <- blocks
+    yield b match
+      case f: File => Seq.fill(f.size)(f.index)
+      case f: Free => Seq.fill(f.size)(0)
+    ).flatten.zipWithIndex.map(_.toLong * _).sum
+
+  def breakBlockSections =
+    def breakBlockSection(blockSection: BlockSection) = blockSection match
+      case f: File => List.fill(f.size)(File(1, f.index))
+      case f: Free => List.fill(f.size)(Free(1))
+
+    Filesystem(blocks.flatMap(breakBlockSection))
+
+def parseInput(input: String): Input =
+  Filesystem(
+    (for (a, i) <- input.filter(_.isDigit).map(_.asDigit).zipWithIndex
+    yield if i % 2 == 0 then File(a, i / 2) else Free(a)).toList
+  )
+
+def part1(input: Input): Output =
+  input.breakBlockSections.compress().checksum
+
 def part2(input: Input): Output =
-  val filesystem =
-    (for (a, i) <- input.map(_.asDigit).zipWithIndex
-    yield if i % 2 == 0 then File(a, i / 2) else Free(a))
-  (for x <- compact2(filesystem)
-  yield x match
-    case f: File => Seq.fill(f.size)(f.index)
-    case f: Free => Seq.fill(f.size)(0)
-  ).flatten.zipWithIndex.map(_.toLong * _).sum
+  input.compress().checksum

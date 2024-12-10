@@ -41,7 +41,7 @@ def parseInput(input: String): Input =
   TopographicMap(input.split('\n').map(_.map(_.asDigit).toVector).toVector)
 
 def part1(input: Input): Output =
-  input.startingPoints.map(input.walk(_).toSet).flatten.size
+  input.startingPoints.map(input.walk(_).distinct).flatten.size
 
 def part2(input: Input): Output =
   input.startingPoints.flatMap(input.walk).size

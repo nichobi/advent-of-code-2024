@@ -1,3 +1,5 @@
+package day05
+
 import scala.annotation.tailrec
 
 @main def main(part: Int, others: String*): Unit =

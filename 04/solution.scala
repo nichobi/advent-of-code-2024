@@ -1,3 +1,5 @@
+package day04
+
 @main def main(part: Int, others: String*): Unit =
   val file = others match
     case Nil      => "input"

@@ -1,3 +1,5 @@
+package day06
+
 import scala.annotation.tailrec
 
 @main def main(part: Int, others: String*): Unit =
@@ -9,6 +11,20 @@ import scala.annotation.tailrec
     case 1 => part1(input)
     case 2 => part2(input)
   println(result)
+
+type Input = State
+type Output = Int
+case class State(
+    guard: GuardState,
+    map: LabMap,
+    visited: Set[(Int, Int)]
+):
+  def finished = !withinBounds(guard.position)
+  val bounds = (0 until map.size, 0 until map.head.size)
+  def withinBounds(position: (Int, Int)) =
+    bounds._1.contains(position._1) && bounds._2.contains(position._2)
+
+case class GuardState(position: (Int, Int), direction: Direction)
 
 enum Direction:
   case Up, Down, Left, Right
@@ -24,19 +40,7 @@ enum Direction:
     case Left  => Up
 import Direction.{Up, Down, Left, Right}
 
-case class GuardState(position: (Int, Int), direction: Direction)
-
-case class State(
-    guard: GuardState,
-    map: Vector[Vector[Boolean]],
-    visited: Set[(Int, Int)]
-):
-  def finished = !withinBounds(guard.position)
-  val bounds = (0 until map.size, 0 until map.head.size)
-  def withinBounds(position: (Int, Int)) =
-    bounds._1.contains(position._1) && bounds._2.contains(position._2)
-type Input = State
-type Output = Int
+type LabMap = Vector[Vector[Boolean]]
 
 def parseInput(input: String): Input =
   val guardChar = input.filter("^v<>".contains).head
@@ -58,6 +62,9 @@ extension (a: (Int, Int))
     (a._1 + b._1, a._2 + b._2)
   def shift(direction: Direction): (Int, Int) =
     add(direction.delta)
+extension (map: LabMap)
+  def updated(indices: (Int, Int), value: Boolean): LabMap =
+    map.updated(indices._1, map(indices._1).updated(indices._2, true))
 
 def step(state: State): State = state match
   case State(GuardState(position, direction), map, visited) =>
@@ -93,6 +100,6 @@ def part2(input: Input): Output =
   val visited = walk(input).visited
   val map = input.map
   visited
-    .map((i, j) => map.updated(i, map(i).updated(j, true)))
+    .map(map.updated(_, true))
     .map(newMap => input.copy(map = newMap))
     .count(isLooped(_))

@@ -1,3 +1,5 @@
+package day08
+
 import Iterator.iterate
 
 @main def main(part: Int, others: String*): Unit =

@@ -14,9 +14,8 @@ type Input = TopographicMap
 type Output = Int
 
 class TopographicMap(map: Vector[Vector[Int]]):
-  private val bounds = (0 until map.size, 0 until map.head.size)
   def withinBounds(p: (Int, Int)) =
-    bounds._1.contains(p._1) && bounds._2.contains(p._2)
+    map.indices.contains(p._1) && map.head.indices.contains(p._2)
 
   def height(p: (Int, Int)) = map(p._1)(p._2)
 
